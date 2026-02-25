@@ -1,3 +1,5 @@
 # dependencies
 /node_modules
+# 忽略mulu文件下的node_modules
+/mulu/*/node_modules
 # file
