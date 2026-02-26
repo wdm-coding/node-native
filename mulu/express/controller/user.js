@@ -1,32 +1,40 @@
-const pool = require('../db');
-
+const { User } = require('../models');
+// 用户注册
+async function register(req, res) {
+  try {
+        const { name, username, password,email } = req.body;
+        const newUser = await User.create({ name, username, password,email });
+        res.status(200).json({code: 0, message: '注册成功', data: {id: newUser.id} });
+    } catch (err) {
+        if (err.username === 'SequelizeUniqueConstraintError') {
+            return res.status(400).json({ error: '用户名已存在' });
+        }
+        res.status(500).json({ error: err });
+    }
+}
 // 查询用户列表
 async function getUserList(req, res) {
   try {
-    const [rows] = await pool.query('SELECT * FROM user');
+    // 分页查询
+    const pageNum = parseInt(req.query.pageNum) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    if (isNaN(pageNum) || isNaN(pageSize) || pageNum < 1 || pageSize < 1) {
+        return res.status(400).json({ error: '无效的分页参数' });
+    }
+    const offset = (pageNum - 1) * pageSize;
+    const { count, rows } = await User.findAndCountAll({
+      offset,
+      order: [['created_at', 'DESC']],
+      limit: pageSize
+    });
     res.send({
       code: 0,
-      data: rows,
+      list: rows,
+      total: count,
+      currentPage: pageNum,
       message: '查询成功'
     });
   } catch (err) {
-    res.status(500).json({ error: err });
-  }
-}
-// 添加用户信息
-async function addUser(req, res) {
-  const body = req.body;
-  if(!body){
-    res.status(400).json({ error: '缺少用户信息' });
-  }
-  try{
-    const [{insertId}] = await pool.query('INSERT INTO user SET ?', body);
-    res.send({
-      code: 0,
-      data: insertId,
-      message: '添加成功'
-    });
-  }catch(err){
     res.status(500).json({ error: err });
   }
 }
@@ -38,11 +46,20 @@ async function editUser(req, res) {
   }
   try{
     const {id, ...updateData} = body;
-    await pool.query('UPDATE user SET ? WHERE id = ?', [updateData, id]);
-    res.send({
-      code: 0,
-      message: '修改成功'
-    });
+    const [updatedRowsCount] = await User.update(updateData, { where: { id } });
+    if (updatedRowsCount === 0) {
+      return res.status(404).json({ error: '用户不存在或未修改任何字段' });
+    }
+    const updatedUser = await User.findByPk(id); // 重新查询以获取更新后的数据
+    if(!updatedUser){
+      res.status(404).json({ error: '用户不存在' });
+    }else{
+      res.send({
+        code: 0,
+        data: updatedUser.id,
+        message: '修改成功'
+      })  
+    }
   }catch(err){
     res.status(500).json({ error: err });
   }
@@ -50,41 +67,36 @@ async function editUser(req, res) {
 
 // 删除用户信息
 async function deleteUser(req, res) {
-  const query = req.query;
-  if(!query || !query.id){
-    res.status(400).json({ error: '缺少用户ID' });
-  }
-  try{
-    await pool.query('DELETE FROM user WHERE id = ?', [query.id]);
-    res.send({
-      code: 0,
-      message: '删除成功'
-    });
-  }catch(err){
-    res.status(500).json({ error: err });
+  try {
+      const { id } = req.params;
+      const deletedRowsCount = await User.destroy({ where: { id } });
+      if (deletedRowsCount === 0) {
+          return res.status(404).json({ error: '用户不存在' });
+      }
+      res.json({ code: 0, message: '删除成功', data: { id } });
+  } catch (err) {
+      res.status(500).json({ error: err.message });
   }
 }
 // 根据id查询用户信息
 async function getUserById(req, res) {
-  const { id } = req.params;
-  try{
-    const [rows] = await pool.query('SELECT * FROM user WHERE id = ?', [id]);
-    if(rows.length === 0){
-      res.status(404).json({ error: '用户不存在' });
-    }
-    res.send({
-      code: 0,
-      data: rows[0],
-      message: '查询成功'
-    });
-  }catch(err){
-    res.status(500).json({ error: err });
+  try {
+      const { id } = req.params;
+      const user = await User.findByPk(id);
+      if (!user) {
+          return res.status(404).json({ error: '用户不存在' });
+      }
+      res.json({ code: 0, data: user, message: '查询成功' });
+  } catch (err) {
+      res.status(500).json({ error: err.message });
   }
 }
 
 
-exports.getUserList = getUserList;
-exports.addUser = addUser;
-exports.editUser = editUser;
-exports.deleteUser = deleteUser;
-exports.getUserById = getUserById;
+module.exports = {
+  register,
+  getUserList,
+  editUser,
+  deleteUser,
+  getUserById
+}
