@@ -1,17 +1,66 @@
 const { User } = require('../models');
+const md5 = require('../utils/md5'); // 引入 md5 加密函数
+const { Op } = require('sequelize'); // 引入 Sequelize 的 Op 操作符
+const {generateToken, verifyToken } = require('../utils/jwt'); // 引入 JWT 相关函数
+
+
+// 用户登录
+async function login(req, res) {
+  try {
+    const { account, password } = req.body;// account 可以是用户名、邮箱或手机号
+    if(!account || !password) {
+      return res.status(200).json({ 
+        code: 1,
+        message: '账号或密码不能为空'
+      });
+    }
+    // 根据账号查找用户，这里使用了 Op.or 来匹配用户名、邮箱或手机号
+    const user = await User.findOne({ where: { 
+      [Op.or]: [
+        { username: account },
+        { email: account },
+        { phone: account }
+      ],
+      password: md5(password) // 使用 md5 加密密码进行匹配
+    } 
+    });
+    if (!user) {
+      return res.status(200).json({ 
+        code: 1,
+        message: '账号或密码错误'
+      });
+    }
+    // 生成 JWT token
+    const token = generateToken({ id: user.id, username: user.username });
+    res.send({
+      code: 0,
+      message: '登录成功',
+      data: token
+    })
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+}
+
+// 用户登出
+async function logout(req, res) {
+    res.send({
+      code: 0,
+      message: '登出成功'
+    });
+}
+
 // 用户注册
 async function register(req, res) {
   try {
-        const { name, username, password,email } = req.body;
-        const newUser = await User.create({ name, username, password,email });
+        const { name, username, password,email,phone,age } = req.body;
+        const newUser = await User.create({ name, username, password,email,phone,age });
         res.status(200).json({code: 0, message: '注册成功', data: {id: newUser.id} });
     } catch (err) {
-        if (err.username === 'SequelizeUniqueConstraintError') {
-            return res.status(400).json({ error: '用户名已存在' });
-        }
         res.status(500).json({ error: err });
     }
 }
+
 // 查询用户列表
 async function getUserList(req, res) {
   try {
@@ -26,7 +75,7 @@ async function getUserList(req, res) {
       offset,
       order: [['created_at', 'DESC']],
       limit: pageSize,
-      attributes: ['id', 'name', 'username','email', 'age', 'created_at', 'updated_at'] // 只返回需要的字段
+      attributes: ['id', 'name', 'username','email', 'age','phone','created_at', 'updated_at'] // 只返回需要的字段
     });
     res.send({
       code: 0,
@@ -39,6 +88,7 @@ async function getUserList(req, res) {
     res.status(500).json({ error: err });
   }
 }
+
 // 修改用户信息
 async function editUser(req, res) {
  const body = req.body;
@@ -79,6 +129,7 @@ async function deleteUser(req, res) {
       res.status(500).json({ error: err.message });
   }
 }
+
 // 根据id查询用户信息
 async function getUserById(req, res) {
   try {
@@ -101,5 +152,7 @@ module.exports = {
   getUserList,
   editUser,
   deleteUser,
-  getUserById
+  getUserById,
+  login,
+  logout
 }

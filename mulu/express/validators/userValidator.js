@@ -23,6 +23,12 @@ const userRegisterValidator =errorBack([
   body('age').optional().isInt({ max: 200 }).withMessage('年龄必须是整数且不超过200'),
 ]) 
 
+// 用户登录验证规则
+const userLoginValidator = errorBack([
+  body('account').trim().notEmpty().withMessage('账号或密码不能为空'),
+  body('password').trim().notEmpty().withMessage('账号或密码不能为空')
+])
+
 // 用户编辑验证规则
 const userEditValidator = errorBack([
   body('email').optional().trim().notEmpty().withMessage('邮箱不能为空').bail()
@@ -40,5 +46,6 @@ const userEditValidator = errorBack([
 
 module.exports = { 
   userRegisterValidator,
-  userEditValidator
+  userEditValidator,
+  userLoginValidator
 };

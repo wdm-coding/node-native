@@ -14,7 +14,18 @@ const User = sequelize.define('User', {
     email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true
+        unique: true,
+        validate: {
+            isEmail: true // 验证邮箱格式
+        }
+    },
+    phone:{
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        validate: {
+            is: /^[0-9\-+]{7,15}$/ // 简单的手机号验证
+        }
     },
     username:{
         type: DataTypes.STRING,
@@ -27,7 +38,7 @@ const User = sequelize.define('User', {
         // 在保存用户之前对密码进行加密
         set(val) {
             this.setDataValue('password', md5(val));
-        }
+        },
     },
     age:{
         type: DataTypes.INTEGER,
