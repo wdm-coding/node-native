@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
-const indexRouter = require('./router/index');
-const usersRouter = require('./router/user');
+const indexRouter = require('../router/index');
+const usersRouter = require('../router/user');
 function logs(req){
   console.log(`${req.method}-${req.url}-${new Date().toLocaleString()}`);
 }

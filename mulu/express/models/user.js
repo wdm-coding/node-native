@@ -24,6 +24,13 @@ const User = sequelize.define('User', {
     password:{
         type: DataTypes.STRING,
         allowNull: false,
+    },
+    age:{
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate:{
+            max: 200
+        }
     }
     // Sequelize 会默认添加 id, createdAt, updatedAt 字段
 }, {
