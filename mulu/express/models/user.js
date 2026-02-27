@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database'); // 引入数据库实例
-
+const md5 = require('../utils/md5'); // 引入 md5 加密函数
 const User = sequelize.define('User', {
     id:{
         type: DataTypes.INTEGER,
@@ -24,11 +24,16 @@ const User = sequelize.define('User', {
     password:{
         type: DataTypes.STRING,
         allowNull: false,
+        // 在保存用户之前对密码进行加密
+        set(val) {
+            this.setDataValue('password', md5(val));
+        }
     },
     age:{
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         validate:{
+            min: 0,
             max: 200
         }
     }

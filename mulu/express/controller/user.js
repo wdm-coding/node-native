@@ -25,7 +25,8 @@ async function getUserList(req, res) {
     const { count, rows } = await User.findAndCountAll({
       offset,
       order: [['created_at', 'DESC']],
-      limit: pageSize
+      limit: pageSize,
+      attributes: ['id', 'name', 'username','email', 'age', 'created_at', 'updated_at'] // 只返回需要的字段
     });
     res.send({
       code: 0,
@@ -82,7 +83,9 @@ async function deleteUser(req, res) {
 async function getUserById(req, res) {
   try {
       const { id } = req.params;
-      const user = await User.findByPk(id);
+      const user = await User.findByPk(id,{
+        attributes: { exclude: ['password'] } // 排除密码字段
+      });
       if (!user) {
           return res.status(404).json({ error: '用户不存在' });
       }
