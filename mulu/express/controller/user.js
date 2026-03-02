@@ -62,11 +62,11 @@ async function logout(req, res) {
 // 用户注册
 async function register(req, res) {
   try {
-      const { name, username, password,email,phone,age } = req.body;
-      const newUser = await User.create({ name, username, password,email,phone,age });
-      res.status(200).json({code: 0, message: '注册成功', data: {id: newUser.id} });
+    const { name, username, password,email,phone,age,avator } = req.body;
+    const newUser = await User.create({ name, username, password,email,phone,age,avator });
+    res.status(200).json({code: 0, message: '注册成功', data: {id: newUser.id} });
   } catch (err) {
-      failBack(res,err);
+    failBack(res,err);
   }
 }
 
@@ -84,7 +84,7 @@ async function getUserList(req, res) {
       offset,
       order: [['created_at', 'DESC']],
       limit: pageSize,
-      attributes: ['id', 'name', 'username','email', 'age','phone','created_at', 'updated_at'] // 只返回需要的字段
+      attributes: {exclude: ['password']} // 查询时排除密码字段
     });
     res.send({
       code: 0,

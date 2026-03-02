@@ -19,8 +19,12 @@ app.use(cors());
 // 日志记录中间件morgan
 app.use(morgan('dev'));
 
+// 处理静态文件的中间件
+app.use(express.static('uploads')); // 将 uploads 目录设置为静态文件目录
+
 // 路由中间件
 app.use('/api',Router)
+
 
 // 处理404错误中间件
 app.use((req, res) => {

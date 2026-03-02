@@ -48,6 +48,11 @@ const User = sequelize.define('User', {
             max: 200
         }
     },
+    avator:{ // 头像字段
+        type: DataTypes.STRING,
+        allowNull: true, // 允许为空，默认为 null
+        defaultValue: 'null'
+    },
     // 与业务相关的频道字段
     cover:{ // 频道分量
         type: DataTypes.STRING,
