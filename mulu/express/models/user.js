@@ -47,6 +47,17 @@ const User = sequelize.define('User', {
             min: 0,
             max: 200
         }
+    },
+    // 与业务相关的频道字段
+    cover:{ // 频道分量
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: 'null'
+    },
+    channeldes:{ // 频道描述
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: 'null'
     }
     // Sequelize 会默认添加 id, createdAt, updatedAt 字段
 }, {

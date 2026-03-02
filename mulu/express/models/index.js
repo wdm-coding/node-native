@@ -1,9 +1,11 @@
 // 统一导出所有模型，并处理数据库同步
 const sequelize = require('../config/database');
 const User = require('./user');
+const Cash = require('./cash');
 // 将模型挂载到 sequelize 实例上，方便后续调用
 const db = {};
 db.User = User;
+db.Cash = Cash;
 db.sequelize = sequelize;
 // 同步数据库表结构
 db.sync = async () => {
