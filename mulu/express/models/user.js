@@ -3,8 +3,8 @@ const sequelize = require('../config/database'); // 引入数据库实例
 const md5 = require('../utils/md5'); // 引入 md5 加密函数
 const User = sequelize.define('User', {
     id:{
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
     name: {
@@ -63,6 +63,16 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: true,
         defaultValue: 'null'
+    },
+    subscribeCount:{ // 订阅数字段
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0
+    },
+    fansCount:{ // 粉丝数字段
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0
     }
     // Sequelize 会默认添加 id, createdAt, updatedAt 字段
 }, {

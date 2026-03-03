@@ -1,9 +1,9 @@
-const { User } = require('../models');
+const { User,Subscribe } = require('../models');
 const md5 = require('../utils/md5'); // 引入 md5 加密函数
 const { Op } = require('sequelize'); // 引入 Sequelize 的 Op 操作符
 const { generateToken } = require('../utils/jwt'); // 引入 JWT 相关函数
 const {Cash} = require('../models');
-const failBack = require('../utils/failBack');
+const {failBack,successBack} = require('../utils/backBody');
 // 用户登录
 async function login(req, res) {
   try {
@@ -27,19 +27,19 @@ async function login(req, res) {
     // 生成 JWT token
     const tokenVersion = new Date().getTime()
     const token = await generateToken({ 
-      id: user.id, 
+      id: user.id,
       username: user.username,
       email: user.email,
       phone: user.phone,
       tokenVersion
     });
-    // 将id 为 1 的cash 设置为当前的用户的cash
-    const cash = await Cash.findOne({ where: { id: 1 } });
+    // 将userId 为 user.id 的cash 设置为当前的用户的cash
+    const cash = await Cash.findOne({ where: { userId: user.id } });
     if (cash) {
       await cash.update({ tokenVersion });
     } else {
       // 如果不存在，则创建一个新的
-      await Cash.create({ tokenVersion });
+      await Cash.create({ tokenVersion, userId: user.id });
     }
     res.send({
       code: 0,
@@ -64,7 +64,7 @@ async function register(req, res) {
   try {
     const { name, username, password,email,phone,age,avator } = req.body;
     const newUser = await User.create({ name, username, password,email,phone,age,avator });
-    res.status(200).json({code: 0, message: '注册成功', data: {id: newUser.id} });
+    successBack(res,{id: newUser.id});
   } catch (err) {
     failBack(res,err);
   }
@@ -173,6 +173,98 @@ async function updateProfile(req, res) {
   }
 }
 
+// 用户订阅
+async function subscribe(req, res) {
+  try {
+      const userId = req.user.id;
+      const { userId: subscribeUserId } = req.params;
+      // 检查subscribeUserId是否存在
+      const subscribeUser = await User.findByPk(subscribeUserId);
+      if (!subscribeUser) {
+          return failBack(res,{message:'关注的用户不存在'});
+      }
+      // 检查是否是自己订阅自己
+      if (userId === subscribeUserId) {
+          return failBack(res,{message:'不能订阅自己'});
+      }
+      // 检查是否已经订阅
+      const existingSubscription = await Subscribe.findOne({ where: { userId, subscribeUserId } });
+      if (existingSubscription) {
+          return failBack(res,{message:'已订阅'});
+      }
+      // 创建新的订阅记录
+      const newRow = await Subscribe.create({ userId, subscribeUserId });
+      if (!newRow) {
+          return failBack(res,{message:'订阅失败'});
+      }
+      // 更新订阅计数
+      await User.increment('subscribeCount', { where: { id: userId } });
+      // 更新被订阅用户的粉丝计数
+      await User.increment('fansCount', { where: { id: subscribeUserId } });
+      successBack(res,newRow);
+  } catch (err) {
+      failBack(res,err);
+  }
+}
+
+// 用户取消订阅
+async function unsubscribe(req, res) {
+  try {
+      const userId = req.user.id;
+      const { userId: subscribeUserId } = req.params;
+      // 检查subscribeUserId是否存在
+      const subscribeUser = await User.findByPk(subscribeUserId);
+      if (!subscribeUser) {
+          return failBack(res,{message:'关注的用户不存在'});
+      }
+      // 检查是否是自己订阅自己
+      if (userId === subscribeUserId) {
+          return failBack(res,{message:'不能取消关注自己'});
+      }
+      // 检查是否已经订阅
+      const existingSubscription = await Subscribe.findOne({ where: { userId, subscribeUserId } });
+      if (!existingSubscription) {
+          return failBack(res,{message:'未关注此用户，无需取消关注'});
+      }
+      // 删除订阅记录
+      await Subscribe.destroy({ where: { id: existingSubscription.id } });
+      // 更新订阅计数
+      await User.decrement('subscribeCount', { where: { id: userId } });
+      // 更新被订阅用户的粉丝计数
+      await User.decrement('fansCount', { where: { id: subscribeUserId } });
+      successBack(res,null);
+  } catch (err) {
+      failBack(res,err);
+  }
+}
+
+// 获取频道信息
+async function getChannel(req, res) {
+  let isSubscribe = false;
+  try {
+      if(req.user){
+        // 检查是否已经订阅
+        const isSub = await Subscribe.findOne({ where: { subscribeUserId:req.params.userId,userId: req.user.id} })
+        if(isSub){
+          isSubscribe = true;
+        }
+      }
+      // 查询频道信息
+      const currentUser = await User.findByPk(req.params.userId,{
+        attributes: ["id","name","cover","channeldes",'avator']
+      });
+      if (!currentUser) {
+          return failBack(res,{message:'用户不存在'});
+      }
+      currentUser.dataValues.isSubscribe = isSubscribe;
+      successBack(res, {...currentUser.dataValues });
+  } catch (err) {
+      failBack(res,err);
+  }
+}
+
+
+
 // 导出所有控制器函数
 module.exports = {
   register,
@@ -182,5 +274,8 @@ module.exports = {
   getUserById,
   login,
   logout,
-  updateProfile
+  updateProfile,
+  subscribe,
+  unsubscribe,
+  getChannel
 }

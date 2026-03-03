@@ -12,12 +12,12 @@ router.get('/', async (req, res) => {
 });
 
 // upload
-router.post('/upload',verifyToken,uploadMidd.single('file'), uploadFile);
+router.post('/upload',verifyToken(),uploadMidd.single('file'), uploadFile);
 
 // user
 router.use('/user', require('./user'))
 
-// video
-router.use('/video', require('./video'))
+// file
+router.use('/file', require('./file'))
 
 module.exports = router;

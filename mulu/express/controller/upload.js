@@ -1,7 +1,7 @@
 const fs = require('fs');
 const {promisify} = require('util');
 const rename = promisify(fs.rename);
-const failBack = require('../utils/failBack');
+const {failBack} = require('../utils/backBody');
 async function uploadFile(req, res) {
   try {
     if (!req.file) {
@@ -22,7 +22,7 @@ async function uploadFile(req, res) {
       data: { filename:name,type:mimetype,size,originalname}
     })
   }catch (error) {
-      failBack(res,error,500);
+    failBack(res,error,500);
   }   
 }
 

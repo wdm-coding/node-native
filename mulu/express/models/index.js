@@ -2,10 +2,14 @@
 const sequelize = require('../config/database');
 const User = require('./user');
 const Cash = require('./cash');
+const File = require('./file');
+const Subscribe = require('./subscribe');
 // 将模型挂载到 sequelize 实例上，方便后续调用
 const db = {};
 db.User = User;
 db.Cash = Cash;
+db.File = File;
+db.Subscribe = Subscribe;
 db.sequelize = sequelize;
 // 同步数据库表结构
 db.sync = async () => {
