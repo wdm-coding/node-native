@@ -26,6 +26,11 @@ const File = sequelize.define('File', {
         allowNull: true, // 允许为空，默认为 null
         defaultValue: 'null'
     },
+    commentCount:{ // 评论数量字段
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0
+    },
     userId:{ // 这里的 userId 是外键，用于关联 User 表中的用户记录
         type: DataTypes.UUID,
         allowNull: false, // 每个文件必须关联一个用户
@@ -41,5 +46,4 @@ const File = sequelize.define('File', {
     timestamps: true, // 使用时间戳字段，默认为 true
     underscored: true, // 使用下划线命名字段
 });
-
 module.exports = File;

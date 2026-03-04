@@ -6,5 +6,7 @@ const fileController = require('../controller/file');
 router.get('/list', verifyToken(), fileController.getList);
 router.post('/add', verifyToken(), fileAddValidator, fileController.addFile);
 router.put('/edit', verifyToken(), fileUpdateValidator, fileController.updateFile);
+router.post('/comment',verifyToken(),fileController.addComment);
+router.get('/commentList',verifyToken(), fileController.getCommentList);
 router.delete('/del/:id', verifyToken(), fileController.deleteFile);
 module.exports = router;
