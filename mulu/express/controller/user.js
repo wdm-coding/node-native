@@ -147,7 +147,7 @@ async function getUserById(req, res) {
         attributes: { exclude: ['password'] } // 排除密码字段
       });
       if (!user) {
-        return failBack(res,{message:'用户不存在'});
+        return failBack(res,{message:'用户不存在3'});
       }
       res.json({ code: 0, data: user, msg: '查询成功' });
   } catch (err) {
@@ -263,8 +263,81 @@ async function getChannel(req, res) {
   }
 }
 
+// 获取关注的用户列表
+async function getSubscribe(req, res) {
+  try{
+    // 查询订阅列表
+    const subscribeList = await Subscribe.findAll({
+      where: {
+        userId: req.params.userId,
+      },
+      include: [{
+        model: User,
+        as: 'subscribed',
+        attributes: ['name', 'cover', 'avator', 'channeldes']
+      }]
+    });
+    if(subscribeList.length === 0) return successBack(res,[]);
+    const list = subscribeList.map(item =>{
+      const params = {
+        subscriberId: item.dataValues.id,
+        ...item.subscribed.dataValues,
+        ...item.dataValues
+      }
+      delete params.subscribed;
+      delete params.id;
+      return params;
+    });
+    successBack(res,list);
+  }catch(err){
+    failBack(res,err);
+  }
+}
 
-
+// 查询粉丝列表
+async function getFans(req, res) {
+  try{
+    // 分页查询
+    const pageNum = parseInt(req.query.pageNum) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    if (isNaN(pageNum) || isNaN(pageSize) || pageNum < 1 || pageSize < 1) {
+        return failBack(res,{message:'无效的分页参数'});
+    }
+    const offset = (pageNum - 1) * pageSize;
+    // 查询粉丝列表
+    const fansList = await Subscribe.findAll({
+      where: {
+        subscribeUserId: req.user.id,
+      },
+      include: [{
+        model: User,
+        as: 'fans',
+        attributes: ['name', 'cover', 'avator', 'channeldes']
+      }],
+      offset,
+      order: [['created_at', 'DESC']],
+      limit: pageSize,
+    });
+    if(fansList.length === 0) return successBack(res,[]);
+    const list = fansList.map(item =>{
+      const params = {
+        subscriberId: item.dataValues.id,
+        ...item.fans.dataValues,
+        ...item.dataValues
+      }
+      delete params.fans;
+      delete params.id;
+      return params;
+    });
+    successBack(res,{
+      list,
+      total: fansList.length,
+      currentPage: pageNum
+    });
+  }catch(err){
+    failBack(res,err);
+  }
+}
 // 导出所有控制器函数
 module.exports = {
   register,
@@ -277,5 +350,7 @@ module.exports = {
   updateProfile,
   subscribe,
   unsubscribe,
-  getChannel
+  getChannel,
+  getSubscribe,
+  getFans
 }

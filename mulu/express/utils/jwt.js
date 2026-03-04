@@ -27,6 +27,7 @@ function verifyToken(isRequired = true) {
 				}
 				req.user = decoded
 				next()
+				return
 			} catch (error) {
 				const { name, message } = error
 				if (name === "TokenExpiredError") {
