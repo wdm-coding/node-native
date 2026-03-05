@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../utils/jwt');
-const {fileAddValidator,fileUpdateValidator} = require('../validators/fileValidator');
+const {fileAddValidator,fileUpdateValidator,likeFileValidator} = require('../validators/fileValidator');
 const fileController = require('../controller/file');
 router.get('/list', verifyToken(), fileController.getList);
 router.post('/add', verifyToken(), fileAddValidator, fileController.addFile);
 router.put('/edit', verifyToken(), fileUpdateValidator, fileController.updateFile);
 router.post('/comment',verifyToken(),fileController.addComment);
 router.get('/commentList',verifyToken(), fileController.getCommentList);
+router.delete('/delComment',verifyToken(),fileController.deleteComment);
+router.post('/like/:fileId',verifyToken(),likeFileValidator,fileController.likeFile);
+router.get('/likeList',verifyToken(), fileController.likeFileList);
+router.get('/detail/:fileId', verifyToken(false), fileController.getFileDetail);
 router.delete('/del/:id', verifyToken(), fileController.deleteFile);
 module.exports = router;

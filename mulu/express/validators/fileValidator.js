@@ -22,7 +22,18 @@ const fileUpdateValidator = errorBack([
   body('description').optional().trim(),
 ])
 
+// likeFile 验证likeFile 参数
+const likeFileValidator = errorBack([
+  // 必须是枚举值1或者-1
+  body('isLike').notEmpty().withMessage('like参数不能为空').bail()
+  .custom(async isLike => {
+    if (isLike !== 1 && isLike !== -1) {
+      throw new Error('like参数必须是1或者-1');
+    }
+  })
+])
 module.exports = {
   fileAddValidator,
-  fileUpdateValidator
+  fileUpdateValidator,
+  likeFileValidator
 }

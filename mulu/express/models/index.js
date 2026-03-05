@@ -5,9 +5,10 @@ const Cash = require('./cash');
 const File = require('./file');
 const Subscribe = require('./subscribe');
 const Comment = require('./comment');
+const FileLike = require('./fileLike');
 // 将模型挂载到 sequelize 实例上，方便后续调用
 const db = {
-    User,Cash,File,Subscribe,Comment
+    User,Cash,File,Subscribe,Comment,FileLike
 };
 db.sequelize = sequelize;
 // 同步数据库表结构

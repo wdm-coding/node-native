@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database'); // 引入数据库实例
+const Comment = require('./comment'); // 引入评论模型
 const File = sequelize.define('File', {
     id:{
         type: DataTypes.UUID,
@@ -31,7 +32,12 @@ const File = sequelize.define('File', {
         allowNull: true,
         defaultValue: 0
     },
-    userId:{ // 这里的 userId 是外键，用于关联 User 表中的用户记录
+    likeCount:{ // 点赞数量字段
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0
+    },
+    uploadUserId:{ // 这里的 userId 是外键，用于关联 User 表中的用户记录
         type: DataTypes.UUID,
         allowNull: false, // 每个文件必须关联一个用户
         references: {
@@ -45,5 +51,10 @@ const File = sequelize.define('File', {
     tableName: 'file', // 指定表名
     timestamps: true, // 使用时间戳字段，默认为 true
     underscored: true, // 使用下划线命名字段
+});
+// 关联评论模型
+File.hasMany(Comment, {
+    as: 'comments', // 关联的别名，用于访问文件下的评论列表
+    foreignKey: 'fileId' // 外键字段名
 });
 module.exports = File;
