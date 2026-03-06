@@ -3,7 +3,7 @@ const router = express.Router();
 const { verifyToken } = require('../utils/jwt');
 const {fileAddValidator,fileUpdateValidator,likeFileValidator} = require('../validators/fileValidator');
 const fileController = require('../controller/file');
-router.get('/list', verifyToken(), fileController.getList);
+router.get('/list', fileController.getList);
 router.post('/add', verifyToken(), fileAddValidator, fileController.addFile);
 router.put('/edit', verifyToken(), fileUpdateValidator, fileController.updateFile);
 router.post('/comment',verifyToken(),fileController.addComment);
@@ -13,4 +13,5 @@ router.post('/like/:fileId',verifyToken(),likeFileValidator,fileController.likeF
 router.get('/likeList',verifyToken(), fileController.likeFileList);
 router.get('/detail/:fileId', verifyToken(false), fileController.getFileDetail);
 router.delete('/del/:id', verifyToken(), fileController.deleteFile);
+router.post('/collect/:fileId',verifyToken(), fileController.addCollect);
 module.exports = router;

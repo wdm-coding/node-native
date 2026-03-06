@@ -8,7 +8,7 @@ const redisClient = new Redis({
     commandTimeout: 30000, // 命令执行超时时间 (毫秒)
     lazyConnect: true, // 延迟连接，即创建实例时不立刻连接
 });
-redisClient.on('connect', () => {
+redisClient.on('ready', () => {
     console.log('Redis 连接成功！')
 });
 redisClient.on('error', (err) => {

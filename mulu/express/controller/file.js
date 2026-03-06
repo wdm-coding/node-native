@@ -1,4 +1,4 @@
-const { File, Comment, User, FileLike } = require("../models")
+const { File, Comment, User, FileLike,Collect } = require("../models")
 const { failBack, successBack } = require("../utils/backBody")
 
 // 获取文件列表
@@ -330,6 +330,46 @@ async function getFileDetail(req, res) {
 	}
 }
 
+// 文件收藏
+async function addCollect(req, res) {
+	try {
+		const userId = req.user.id
+		const fileId = req.params.fileId
+		const status = req.body.status
+		if(![1, -1].includes(status)) return failBack(res, { message: "无效的收藏状态" }, 200)
+		// 检查文件是否存在
+		const file = await File.findByPk(fileId)
+		if (!file) {
+			return failBack(res, { message: "文件不存在" }, 200)
+		}
+		// 检查用户是否已经收藏
+		const collect = await Collect.findOne({
+			where: { userId, fileId }
+		})
+		if (collect && status === 1) { 
+			return failBack(res, { message: "已收藏" }, 200)
+		}
+		if (collect && status === -1) { // 取消收藏
+			await collect.destroy()
+			return successBack(res, {}, "取消收藏")
+		}
+		if(!collect && status === -1) {
+			return failBack(res, { message: "未收藏" }, 200)
+		}
+		// 添加收藏
+		const result = await Collect.create({
+			userId,
+			fileId
+		})
+		successBack(res,{collectId:result.id} ,"收藏成功")
+	} catch (error) {
+		failBack(res, error, 500)
+	}
+}
+
+// 文件热度 查看文件+1，点赞+2，评论+2，收藏+3
+
+
 module.exports = {
 	getList,
 	addFile,
@@ -340,5 +380,6 @@ module.exports = {
 	deleteComment,
 	likeFile,
   likeFileList,
-	getFileDetail
+	getFileDetail,
+	addCollect
 }
