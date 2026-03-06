@@ -4,7 +4,6 @@ const Router = require('./router/index'); // 引入路由聚合
 const app = express();
 const cors = require('cors'); // 引入跨域中间件
 const morgan = require('morgan'); // 引入日志记录中间件
-
 // app.use应用程序中间件
 app.use((req,res,next)=>{next()})
 
