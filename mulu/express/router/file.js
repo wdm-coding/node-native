@@ -13,5 +13,6 @@ router.post('/like/:fileId',verifyToken(),likeFileValidator,fileController.likeF
 router.get('/likeList',verifyToken(), fileController.likeFileList);
 router.get('/detail/:fileId', verifyToken(false), fileController.getFileDetail);
 router.delete('/del/:id', verifyToken(), fileController.deleteFile);
+router.get('/hotList',fileController.getHotList);
 router.post('/collect/:fileId',verifyToken(), fileController.addCollect);
 module.exports = router;

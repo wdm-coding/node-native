@@ -1,6 +1,6 @@
 const { File, Comment, User, FileLike,Collect } = require("../models")
 const { failBack, successBack } = require("../utils/backBody")
-
+const { hotInc,topHots,getHot } = require("../models/fileHot")
 // 获取文件列表
 async function getList(req, res) {
 	try {
@@ -16,8 +16,11 @@ async function getList(req, res) {
 			order: [["created_at", "DESC"]],
 			limit: pageSize,
 		})
-		console.log(rows)
 		const files = rows.map((file) => file.dataValues)
+		for (let file of files) {
+			const hotNum = await getHot(file.id)
+			file.hotNum = hotNum || 0
+		}
 		successBack(res, {
 			list: files,
 			total: count,
@@ -95,6 +98,7 @@ async function addComment(req, res) {
 		})
 		// 更新文件评论数量
 		await file.increment("commentCount")
+		await hotInc(fileId,2)
 		successBack(res, { id: newComment.id })
 	} catch (error) {
 		failBack(res, error, 500)
@@ -164,6 +168,7 @@ async function deleteComment(req, res) {
 		await comment.destroy()
 		// 更新文件评论数量
 		await file.decrement("commentCount")
+		await hotInc(fileId, -2)
 		successBack(res, null)
 	} catch (error) {
 		failBack(res, error, 500)
@@ -217,6 +222,7 @@ async function likeFile(req, res) {
 				await file.decrement("likeCount") // 减少点赞数，但至少为0
 			}
 		}
+		await hotInc(file.id, 2)
 		return successBack(res, {
 			isLike: isLike === 1 ? true : false,
 			likeCount: Math.max(0, file.dataValues.likeCount - (isLike === 1 ? -1 : 1)),
@@ -319,8 +325,11 @@ async function getFileDetail(req, res) {
 			delete params.id
 			return params
 		})
+		await hotInc(fileId, 1)
+		const hotNum = await getHot(fileId)
 		successBack(res, {
 			...file.dataValues,
+			hotNum,
 			likeCount,
 			dislikeCount,
 			comments
@@ -351,6 +360,7 @@ async function addCollect(req, res) {
 		}
 		if (collect && status === -1) { // 取消收藏
 			await collect.destroy()
+			await hotInc(fileId, -3)
 			return successBack(res, {}, "取消收藏")
 		}
 		if(!collect && status === -1) {
@@ -361,14 +371,23 @@ async function addCollect(req, res) {
 			userId,
 			fileId
 		})
+		await hotInc(fileId, 3)
 		successBack(res,{collectId:result.id} ,"收藏成功")
 	} catch (error) {
 		failBack(res, error, 500)
 	}
 }
 
-// 文件热度 查看文件+1，点赞+2，评论+2，收藏+3
-
+// 获取热度排行榜
+async function getHotList(req, res) {
+	try {
+		const { top = 10 } = req.query
+		const hots = await topHots(top)
+		successBack(res, hots)
+	} catch (error) {
+		failBack(res, error, 500)
+	}
+}
 
 module.exports = {
 	getList,
@@ -381,5 +400,6 @@ module.exports = {
 	likeFile,
   likeFileList,
 	getFileDetail,
-	addCollect
+	addCollect,
+	getHotList
 }
