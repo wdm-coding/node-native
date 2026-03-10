@@ -4,6 +4,7 @@ const router = new Router({
 })
 // 定义路由规则
 router.get('/', ctx => {
+    JSON.parse(ctx.request.query);
     ctx.body = '首页';
 })
 module.exports = router;
