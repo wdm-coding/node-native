@@ -1,8 +1,7 @@
-const { User,Subscribe } = require('../models');
+const { User,Subscribe,Cash } = require('../models');
 const md5 = require('../utils/md5'); // 引入 md5 加密函数
 const { Op } = require('sequelize'); // 引入 Sequelize 的 Op 操作符
 const { generateToken } = require('../utils/jwt'); // 引入 JWT 相关函数
-const {Cash} = require('../models');
 const {failBack,successBack} = require('../utils/backBody');
 // 用户登录
 async function login(req, res) {
