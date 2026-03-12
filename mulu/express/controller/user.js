@@ -43,7 +43,7 @@ async function login(req, res) {
     res.send({
       code: 0,
       msg: '登录成功',
-      data: token
+      data: "Bearer " + token
     })
   } catch (err) {
     failBack(res,err);
@@ -263,12 +263,12 @@ async function getChannel(req, res) {
 }
 
 // 获取关注的用户列表
-async function getSubscribe(req, res) {
+async function getSubscribes(req, res) {
   try{
     // 查询订阅列表
     const subscribeList = await Subscribe.findAll({
       where: {
-        userId: req.params.userId,
+        userId: req.user.id,
       },
       include: [{
         model: User,
@@ -350,6 +350,6 @@ module.exports = {
   subscribe,
   unsubscribe,
   getChannel,
-  getSubscribe,
+  getSubscribes,
   getFans
 }

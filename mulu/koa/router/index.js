@@ -20,9 +20,9 @@ router
 .get('/user/getChannel/:userId',verifyToken(false),  userController.getChannel) // 获取关注用户的频道信息
 .post('/user/subscribe/:subscribeUserId',verifyToken(), userController.subscribe) // 订阅用户
 .post('/user/unsubscribe/:subscribeUserId',verifyToken(), userController.unsubscribe) // 取消订阅用户
+.get('/user/getSubscribes',verifyToken(),userController.getSubscribes) // 获取关注的用户列表
 // .delete('/user/delete',userController.deleteUser) // 删除用户
 // .put('/user/updateProfile', updateProfileValidator, userController.updateProfile) // 修改个人信息
-// .get('/user/getSubscribe/:userId', userController.getSubscribe) // 获取关注的用户列表
 // .get('/user/getFans', userController.getFans) // 获取粉丝列表
 // .post('/user/logout',  userController.logout) // 用户登出接口
 // .get('/user/:id', userController.getUserById) // 根据id查询用户信息

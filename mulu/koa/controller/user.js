@@ -205,5 +205,36 @@ module.exports = {
 			failBack(ctx, err)
 		}
 	},
-  // 12.7完结
+	// 9. 获取关注的用户列表
+	getSubscribes: async (ctx) => {
+		try {
+			// 查询订阅列表
+			const subscribeList = await Subscribe.findAll({
+				where: {
+					userId: ctx.user.id,
+				},
+				include: [
+					{
+						model: User,
+						as: "subscribed",
+						attributes: ["name", "cover", "avator", "channeldes"],
+					},
+				],
+			})
+			if (subscribeList.length === 0) return successBack(ctx, [])
+			const list = subscribeList.map((item) => {
+				const params = {
+					subscriberId: item.dataValues.id,
+					...item.subscribed.dataValues,
+					...item.dataValues,
+				}
+				delete params.subscribed
+				delete params.id
+				return params
+			})
+			successBack(ctx, list)
+		} catch (err) {
+			failBack(ctx, err)
+		}
+	},
 }

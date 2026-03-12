@@ -15,7 +15,7 @@ router
 .post('/subscribe/:userId', verifyToken(), userController.subscribe) // 订阅用户
 .post('/unsubscribe/:userId', verifyToken(), userController.unsubscribe) // 取消订阅用户
 .get('/getChannel/:userId', verifyToken(false), userController.getChannel) // 获取关注用户的频道信息
-.get('/getSubscribe/:userId', userController.getSubscribe) // 获取关注的用户列表
+.get('/getSubscribes',verifyToken(),userController.getSubscribes) // 获取关注的用户列表
 .get('/getFans',verifyToken(), userController.getFans) // 获取粉丝列表
 .get('/:id', verifyToken(),userController.getUserById) // 根据id查询用户信息
 module.exports = router;
