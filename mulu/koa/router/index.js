@@ -28,4 +28,6 @@ router
 .post('/upload', verifyToken(),uploadController.uploadMidd.single('file'), uploadController.uploadFile) // 文件上传接口
 .get('/file/list', verifyToken(), fileController.getList) // 文件列表接口
 .post('/file/add', verifyToken(), fileController.addFile) // 新增文件接口
+.get('/file/list/:userId', verifyToken(), fileController.getUserFileList) // 获取用户文件列表
+.post('/file/comment',verifyToken(), fileController.addComment) //添加评论信息
 module.exports = router;
