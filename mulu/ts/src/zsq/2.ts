@@ -1,13 +1,11 @@
 // 带参数的装饰器
-function FirstClassDecorator(params:any){
+function FirstClassDecorator(params?:any){
   return function(target: any) {
-    let ins = new target()
-    ins.order() 
-    console.log('params',params)
-    console.log('装饰器执行了',ins) 
+    console.log('装饰器执行了') 
   }
 }
 @FirstClassDecorator('xxx')
+@FirstClassDecorator()
 class CustomerService {
   name: string = '下单'
   constructor() {
