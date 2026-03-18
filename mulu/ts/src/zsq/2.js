@@ -68,12 +68,6 @@ var CustomerService = (function () {
 			this.name = "下单"
 			console.log("构造函数")
 		}
-		CustomerService_1.prototype.order = function () {
-			console.log("下单了")
-		}
-		CustomerService_1.prototype.pay = function () {
-			console.log("支付了")
-		}
 		return CustomerService_1
 	})())
 	__setFunctionName(_classThis, "CustomerService")
