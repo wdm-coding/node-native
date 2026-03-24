@@ -33,7 +33,7 @@ app.use((req, res) => {
 // 处理500错误中间件
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).send('Server Error');
+  res.status(500).send('服务器内部错误');
 });
 
 // 在启动服务器前先同步数据库

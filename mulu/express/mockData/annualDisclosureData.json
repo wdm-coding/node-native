@@ -1,0 +1,33 @@
+{
+  "optList": [
+    {
+      "id": "1774254856695",
+      "operatorName": "测试运营机构",
+      "productName": "测试产品",
+      "registerConfirmNo": "GAN1242345242345",
+      "productServiceWay": "1",
+      "createTime": "2026-03-05 00:00:00",
+      "updateTime": "2026-03-05 00:00:00"
+    }
+  ],
+  "impList": [
+    {
+      "id": "1774255280641",
+      "implementOrgName": "酒泉大数据中心",
+      "operatorName": "嘉峪关大数据中心",
+      "authorizedStartTime": "2026-03-05",
+      "authorizedEndTime": "2026-03-07",
+      "createTime": "2026-03-05 00:00:00",
+      "updateTime": 1774255280641
+    },
+    {
+      "id": "1774255304981",
+      "implementOrgName": "酒泉大数据中心",
+      "operatorName": "嘉峪关大数据中心",
+      "authorizedStartTime": "2026-03-05",
+      "authorizedEndTime": "2026-03-07",
+      "createTime": "2026-03-05 00:00:00",
+      "updateTime": 1774255304981
+    }
+  ]
+}

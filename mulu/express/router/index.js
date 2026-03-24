@@ -20,4 +20,6 @@ router.use('/user', require('./user'))
 // file
 router.use('/file', require('./file'))
 
+// annualDisclosure
+router.use('/andc', require('./annualDisclosure'))
 module.exports = router;
