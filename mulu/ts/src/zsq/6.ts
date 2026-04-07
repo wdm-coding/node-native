@@ -1,9 +1,9 @@
 // 装饰器综合应用
 
 class Collection<T = any> {
-  static collection:Collection = new Collection()
-  private constructor() {}
-  private itemsMap = new Map<string|symbol, any>()
+  static collection:Collection = new Collection() // 单例模式 所有模块共享同一份数据。
+  private constructor() {} // 私有构造函数：防止外部通过 new Collection() 创建实例
+  private itemsMap = new Map<string|symbol, any>() // 全局共享的 Map 容器
   public setItem(key: string|symbol, value: any) {
     this.itemsMap.set(key, value)
   }
@@ -13,22 +13,15 @@ class Collection<T = any> {
   public has(id:string | symbol):boolean {
     return this.itemsMap.has(id)
   }
-  public removeItem(key: string|symbol) {
-    this.itemsMap.delete(key)
-  }
-  public clear() {
-    this.itemsMap.clear()
-  }
-  public size() {
-    return this.itemsMap.size
-  }
-  public isEmpty() {
-    return this.itemsMap.size === 0
-  }
-  public keys() {
-    return this.itemsMap.keys()
+}
+
+export const collection = Collection.collection
+
+export class UserServive {
+  pname:string = '张三'
+  public login (name:string) {
+    console.log('登录成功',name)
   }
 }
 
-export default Collection.collection
- 
+// 元数据的第三方库 npm i reflect-metadata -S
