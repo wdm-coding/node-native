@@ -3,9 +3,15 @@ const router = express.Router();
 const userController = require('../controller/user');
 const { userRegisterValidator,userEditValidator,userLoginValidator,updateProfileValidator } = require('../validators/index');
 const { verifyToken } = require('../utils/jwt');
+const multer = require('multer'); // 引入 multer
+const uploadMidd = multer({
+  dest: 'uploads/' // 设置上传文件的存储目录
+})
 
 router
 .post('/login', userLoginValidator, userController.login) // 用户登录接口
+.post('/parseCert',verifyToken(),uploadMidd.single('file'), userController.parseCert) // 证书上传后解析证书信息接口
+.get('/info', verifyToken(), userController.getUserInfo) // 获取用户信息接口
 .post('/logout', verifyToken(), userController.logout) // 用户登出接口
 .post('/register', userRegisterValidator,  userController.register) // 用户注册接口
 .get('/list',verifyToken(), userController.getUserList)// 查询用户列表

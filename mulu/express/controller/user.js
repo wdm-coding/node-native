@@ -3,6 +3,7 @@ const md5 = require('../utils/md5'); // 引入 md5 加密函数
 const { Op } = require('sequelize'); // 引入 Sequelize 的 Op 操作符
 const { generateToken } = require('../utils/jwt'); // 引入 JWT 相关函数
 const {failBack,successBack} = require('../utils/backBody');
+const { parseP12FromFile  } = require('../utils/cert');
 // 用户登录
 async function login(req, res) {
   try {
@@ -49,7 +50,20 @@ async function login(req, res) {
     failBack(res,err);
   }
 }
-
+// 获取用户信息
+async function getUserInfo(req, res) {
+  try {
+    const user = await User.findByPk(req.user.id,{
+      attributes: {exclude: ['password']}
+    });
+    if (!user) {
+      return failBack(res,{message:'用户不存在'});
+    }
+    successBack(res,user);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
 // 用户登出
 async function logout(req, res) {
     res.send({
@@ -337,6 +351,27 @@ async function getFans(req, res) {
     failBack(res,err);
   }
 }
+
+// 证书上传后解析证书信息
+async function parseCert(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        code: 1, 
+        message: '请上传文件' 
+      });
+    }
+    console.log('req.file:', req.file);
+    // 直接调用解析 P12 文件的函数
+    const certContent = parseP12FromFile(req.file.path);
+    console.log('certContent:', certContent);
+    // 解析证书信息
+    successBack(res,certContent);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
+
 // 导出所有控制器函数
 module.exports = {
   register,
@@ -351,5 +386,7 @@ module.exports = {
   unsubscribe,
   getChannel,
   getSubscribes,
-  getFans
+  getFans,
+  getUserInfo,
+  parseCert
 }
