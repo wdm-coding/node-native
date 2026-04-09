@@ -372,6 +372,17 @@ async function parseCert(req, res) {
   }
 }
 
+// 为用户生成证书
+async function generateCert(req, res) {
+  try {
+    // 生成证书
+    const cert = await generateCertificate(req.user.id);
+    successBack(res,cert);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
+
 // 导出所有控制器函数
 module.exports = {
   register,
