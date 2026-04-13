@@ -7,9 +7,11 @@ const Subscribe = require('./subscribe');
 const Comment = require('./comment');
 const FileLike = require('./fileLike');
 const Collect = require('./collect');
+const UserCert = require('./userCert');
+
 // 将模型挂载到 sequelize 实例上，方便后续调用
 const db = {
-    User,Cash,File,Subscribe,Comment,FileLike,Collect
+    User,Cash,File,Subscribe,Comment,FileLike,Collect,UserCert  
 };
 db.sequelize = sequelize;
 // 同步数据库表结构

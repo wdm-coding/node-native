@@ -1,9 +1,11 @@
-const { User,Subscribe,Cash } = require('../models');
+const { User,Subscribe,Cash,UserCert } = require('../models');
 const md5 = require('../utils/md5'); // 引入 md5 加密函数
 const { Op } = require('sequelize'); // 引入 Sequelize 的 Op 操作符
 const { generateToken } = require('../utils/jwt'); // 引入 JWT 相关函数
 const {failBack,successBack} = require('../utils/backBody');
 const { parseP12FromFile  } = require('../utils/cert');
+const forge = require('node-forge');
+const { signUserCertificate } = require('../config/ssl');
 // 用户登录
 async function login(req, res) {
   try {
@@ -97,11 +99,20 @@ async function getUserList(req, res) {
       offset,
       order: [['created_at', 'DESC']],
       limit: pageSize,
-      attributes: {exclude: ['password']} // 查询时排除密码字段
+      // 关联查询证书表
+      include: [{
+        model: UserCert,
+        as: 'cert',
+        attributes: ['userId']
+      }],
+      attributes: {exclude: ['password']}  // 查询时排除密码字段
     });
     res.send({
       code: 0,
-      list: rows,
+      list: rows.map(user => ({
+        ...user.toJSON(),
+        cert: !!user.cert
+      })),
       total: count,
       currentPage: pageNum,
       message: '查询成功'
@@ -372,16 +383,112 @@ async function parseCert(req, res) {
   }
 }
 
-// 为用户生成证书
-async function generateCert(req, res) {
+// 用户申请证书
+async function applyCert(req, res) {
   try {
-    // 生成证书
-    const cert = await generateCertificate(req.user.id);
+    const { userId } = req.params;
+    // 1. 验证用户是否存在
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return failBack(res,{message:'用户不存在'});
+    }
+    // 查询证书是否存在
+    const existingCert = await UserCert.findOne({ where: { userId } });
+    if (existingCert) {
+      return failBack(res,{message:'用户已申请证书'});
+    }
+    // 2. 生成 RSA 密钥对 (放在服务端)
+    const keys = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+    const publicKey = keys.publicKey;
+    const privateKey = keys.privateKey;
+    // 3. 创建 CSR (放在服务端)
+    const csr = forge.pki.createCertificationRequest();
+    csr.publicKey = publicKey;
+    csr.setSubject([{
+        name: 'commonName', // 将用户 ID 放入 CN 字段
+        value: String(userId)
+    }]);
+    // 4. 签名 CSR
+    csr.sign(privateKey, forge.md.sha256.create());
+    const csrPem = forge.pki.certificationRequestToPem(csr);
+    // 5. 将 CSR 转换回 forge 对象以便签发函数使用
+    const forgeCsr = forge.pki.certificationRequestFromPem(csrPem);
+    // 6. 使用 CA 私钥签发证书
+    const userCertPem = await signUserCertificate(forgeCsr, userId);
+    const privateKeyPem = forge.pki.privateKeyToPem(privateKey); // 将私钥转换为 PEM 格式
+    const encryptedPrivateKey = privateKeyPem // 直接存储私钥，不加密
+    // 7. 保存证书和加密后的私钥到数据库
+    const cert = await UserCert.create({
+        userId,
+        certPem: userCertPem,
+        encryptedPrivateKey
+    });
     successBack(res,cert);
   } catch (err) {
     failBack(res,err);
   }
 }
+
+
+// 用户下载证书文件为 P12 格式
+async function downloadCert(req, res) {
+  try {
+    const { userId } = req.params;
+    // 1. 验证用户是否存在
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return failBack(res,{message:'用户不存在'});
+    }
+    // 查询证书是否存在
+    const existingCert = await UserCert.findOne({ where: { userId } });
+    if (!existingCert) {
+      return failBack(res,{message:'用户未申请证书'});
+    }
+    // 2. 构建 P12 文件内容
+    const userCert = forge.pki.certificateFromPem(existingCert.certPem);
+    const privateKey = forge.pki.privateKeyFromPem(existingCert.encryptedPrivateKey); 
+    console.log('userCert:', userCert);
+    const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
+      privateKey,
+      [userCert],
+      '123456',
+    )
+    // 将 ASN.1 结构转换为 DER 编码的二进制数据
+    const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+    // 3. 发送 P12 文件
+    // 4. 设置响应头并发送 P12 文件流
+    res.setHeader('Content-Disposition', `attachment; filename="user_${userId}.p12"`); // 设置下载文件名
+    res.setHeader('Content-Type', 'application/x-pkcs12'); // 设置正确的 MIME 类型
+    res.send(p12Der); // 发送二进制数据
+  } catch (err) {
+    console.log('err:', err);
+    failBack(res,err);
+  }
+}
+
+
+// 用户注销证书
+async function cancelCert(req, res) {
+  try {
+    const { userId } = req.params;
+    // 1. 验证用户是否存在
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return failBack(res,{message:'用户不存在'});
+    }
+    // 查询证书是否存在
+    const existingCert = await UserCert.findOne({ where: { userId } });
+    if (!existingCert) {
+      return failBack(res,{message:'用户未申请证书'});
+    }
+    // 2. 删除证书记录
+    await existingCert.destroy();
+    successBack(res);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
+
 
 // 导出所有控制器函数
 module.exports = {
@@ -399,5 +506,8 @@ module.exports = {
   getSubscribes,
   getFans,
   getUserInfo,
-  parseCert
+  parseCert,
+  applyCert,
+  cancelCert,
+  downloadCert
 }

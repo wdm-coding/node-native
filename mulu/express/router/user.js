@@ -12,6 +12,9 @@ router
 .post('/login', userLoginValidator, userController.login) // 用户登录接口
 .post('/parseCert',verifyToken(),uploadMidd.single('file'), userController.parseCert) // 证书上传后解析证书信息接口
 .get('/info', verifyToken(), userController.getUserInfo) // 获取用户信息接口
+.post('/applyCert/:userId', verifyToken(), userController.applyCert) // 用户申请证书接口
+.post('/cancelCert/:userId', verifyToken(), userController.cancelCert) // 用户注销证书接口
+.get('/downloadCert/:userId', verifyToken(), userController.downloadCert) // 用户下载证书接口
 .post('/logout', verifyToken(), userController.logout) // 用户登出接口
 .post('/register', userRegisterValidator,  userController.register) // 用户注册接口
 .get('/list',verifyToken(), userController.getUserList)// 查询用户列表
