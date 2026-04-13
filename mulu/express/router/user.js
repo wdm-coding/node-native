@@ -7,11 +7,13 @@ const multer = require('multer'); // 引入 multer
 const uploadMidd = multer({
   dest: 'uploads/' // 设置上传文件的存储目录
 })
+const clientCertAuthMiddleware = require('../utils/clientCertAuthMiddleware');
 
 router
 .post('/login', userLoginValidator, userController.login) // 用户登录接口
 .post('/parseCert',verifyToken(),uploadMidd.single('file'), userController.parseCert) // 证书上传后解析证书信息接口
 .get('/info', verifyToken(), userController.getUserInfo) // 获取用户信息接口
+.get('/certLogin', clientCertAuthMiddleware, userController.certLogin) // 证书登录接口
 .post('/applyCert/:userId', verifyToken(), userController.applyCert) // 用户申请证书接口
 .post('/cancelCert/:userId', verifyToken(), userController.cancelCert) // 用户注销证书接口
 .get('/downloadCert/:userId', verifyToken(), userController.downloadCert) // 用户下载证书接口

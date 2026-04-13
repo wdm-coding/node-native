@@ -447,7 +447,6 @@ async function downloadCert(req, res) {
     // 2. 构建 P12 文件内容
     const userCert = forge.pki.certificateFromPem(existingCert.certPem);
     const privateKey = forge.pki.privateKeyFromPem(existingCert.encryptedPrivateKey); 
-    console.log('userCert:', userCert);
     const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
       privateKey,
       [userCert],
@@ -457,9 +456,13 @@ async function downloadCert(req, res) {
     const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
     // 3. 发送 P12 文件
     // 4. 设置响应头并发送 P12 文件流
-    res.setHeader('Content-Disposition', `attachment; filename="user_${userId}.p12"`); // 设置下载文件名
-    res.setHeader('Content-Type', 'application/x-pkcs12'); // 设置正确的 MIME 类型
-    res.send(p12Der); // 发送二进制数据
+    res.setHeader('Content-Type', 'application/x-pkcs12');
+    res.setHeader('Content-Disposition', `attachment; filename="${userId}.p12"`);
+    res.setHeader('Content-Length', p12Der.length);
+
+    // 发送二进制数据
+    // res.send(Buffer.from(p12Der, 'binary'));
+    successBack(res,Buffer.from(p12Der, 'binary'));
   } catch (err) {
     console.log('err:', err);
     failBack(res,err);
@@ -490,6 +493,17 @@ async function cancelCert(req, res) {
 }
 
 
+// 证书登录
+async function certLogin(req, res) {
+  try {    
+    // 解析证书信息
+    // successBack(res);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
+
+
 // 导出所有控制器函数
 module.exports = {
   register,
@@ -509,5 +523,6 @@ module.exports = {
   parseCert,
   applyCert,
   cancelCert,
-  downloadCert
+  downloadCert,
+  certLogin
 }
