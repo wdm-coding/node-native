@@ -363,113 +363,6 @@ async function getFans(req, res) {
   }
 }
 
-// 证书上传后解析证书信息
-async function parseCert(req, res) {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ 
-        code: 1, 
-        message: '请上传文件' 
-      });
-    }
-    console.log('req.file:', req.file);
-    // 直接调用解析 P12 文件的函数
-    const certContent = parseP12FromFile(req.file.path);
-    console.log('certContent:', certContent);
-    // 解析证书信息
-    successBack(res,certContent);
-  } catch (err) {
-    failBack(res,err);
-  }
-}
-
-// 用户申请证书
-async function applyCert(req, res) {
-  try {
-    const { userId } = req.params;
-    // 1. 验证用户是否存在
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return failBack(res,{message:'用户不存在'});
-    }
-    // 查询证书是否存在
-    const existingCert = await UserCert.findOne({ where: { userId } });
-    if (existingCert) {
-      return failBack(res,{message:'用户已申请证书'});
-    }
-    // 2. 生成 RSA 密钥对 (放在服务端)
-    const keys = forge.pki.rsa.generateKeyPair({ bits: 2048 });
-    const publicKey = keys.publicKey;
-    const privateKey = keys.privateKey;
-    // 3. 创建 CSR (放在服务端)
-    const csr = forge.pki.createCertificationRequest();
-    csr.publicKey = publicKey;
-    csr.setSubject([{
-        name: 'commonName', // 将用户 ID 放入 CN 字段
-        value: String(userId)
-    }]);
-    // 4. 签名 CSR
-    csr.sign(privateKey, forge.md.sha256.create());
-    const csrPem = forge.pki.certificationRequestToPem(csr);
-    // 5. 将 CSR 转换回 forge 对象以便签发函数使用
-    const forgeCsr = forge.pki.certificationRequestFromPem(csrPem);
-    // 6. 使用 CA 私钥签发证书
-    const userCertPem = await signUserCertificate(forgeCsr, userId);
-    const privateKeyPem = forge.pki.privateKeyToPem(privateKey); // 将私钥转换为 PEM 格式
-    const encryptedPrivateKey = privateKeyPem // 直接存储私钥，不加密
-    // 7. 保存证书和加密后的私钥到数据库
-    const cert = await UserCert.create({
-        userId,
-        certPem: userCertPem,
-        encryptedPrivateKey
-    });
-    successBack(res,cert);
-  } catch (err) {
-    failBack(res,err);
-  }
-}
-
-
-// 用户下载证书文件为 P12 格式
-async function downloadCert(req, res) {
-  try {
-    const { userId } = req.params;
-    // 1. 验证用户是否存在
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return failBack(res,{message:'用户不存在'});
-    }
-    // 查询证书是否存在
-    const existingCert = await UserCert.findOne({ where: { userId } });
-    if (!existingCert) {
-      return failBack(res,{message:'用户未申请证书'});
-    }
-    // 2. 构建 P12 文件内容
-    const userCert = forge.pki.certificateFromPem(existingCert.certPem);
-    const privateKey = forge.pki.privateKeyFromPem(existingCert.encryptedPrivateKey); 
-    const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
-      privateKey,
-      [userCert],
-      '123456',
-    )
-    // 将 ASN.1 结构转换为 DER 编码的二进制数据
-    const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
-    // 3. 发送 P12 文件
-    // 4. 设置响应头并发送 P12 文件流
-    res.setHeader('Content-Type', 'application/x-pkcs12');
-    res.setHeader('Content-Disposition', `attachment; filename="${userId}.p12"`);
-    res.setHeader('Content-Length', p12Der.length);
-
-    // 发送二进制数据
-    // res.send(Buffer.from(p12Der, 'binary'));
-    successBack(res,Buffer.from(p12Der, 'binary'));
-  } catch (err) {
-    console.log('err:', err);
-    failBack(res,err);
-  }
-}
-
-
 // 用户注销证书
 async function cancelCert(req, res) {
   try {
@@ -497,11 +390,118 @@ async function cancelCert(req, res) {
 async function certLogin(req, res) {
   try {    
     // 解析证书信息
-    // successBack(res);
+    console.log('req.certUserId:', req.certUserId);
+    successBack(res);
   } catch (err) {
     failBack(res,err);
   }
 }
+
+// 证书上传后解析证书信息
+async function parseCert(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        code: 1, 
+        message: '请上传文件' 
+      });
+    }
+    console.log('req.file:', req.file);
+    // 直接调用解析 P12 文件的函数
+    const certContent = parseP12FromFile(req.file.path);
+    console.log('certContent:', certContent);
+    // 解析证书信息
+    successBack(res,certContent);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
+
+// 用户申请证书
+const { createClientCert } = require('../config/ssl.js');
+async function applyCert(req, res) {
+  try {
+    const { userId } = req.params;
+
+    // 1. 验证用户是否存在
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return failBack(res,{message:'用户不存在'});
+    }
+
+    // 2. 验证用户是否已申请证书
+    const existingCert = await UserCert.findOne({ where: { userId } });
+    if (existingCert) {
+      return failBack(res,{message:'用户已申请证书'});
+    }
+    
+    // 3. 生成证书
+    const certData  = createClientCert(userId);
+ // 【关键修复】存入前再次清洗，确保没有 \r 或多余空格
+    const cleanKey = certData.clientKey.replace(/\r/g, '').trim();
+    const cleanCert = certData.clientCert.replace(/\r/g, '').trim();
+    // 4. 保存证书和加密后的私钥到数据库
+    const newCertRecord = await UserCert.create({
+      userId: userId, // 用户ID
+      privateKey: cleanKey,    // 保存私钥
+      clientCert: cleanCert,   // 保存用户证书
+    });
+    successBack(res,newCertRecord);
+  } catch (err) {
+    console.log('err:', err);
+    failBack(res,err);
+  }
+}
+
+// 用户下载证书文件为 P12 格式
+async function downloadCert(req, res) {
+  try {
+    const { userId } = req.params;
+
+    // 1. 验证用户是否存在
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return failBack(res,{message:'用户不存在'});
+    }
+
+    // 查询证书是否存在
+    const existingCert = await UserCert.findOne({ where: { userId } });
+    if (!existingCert) {
+      return failBack(res,{message:'用户未申请证书'});
+    }
+    // 解析证书和私钥
+    // 1. 确保从数据库取出的字符串是干净的
+    const certPemStr = existingCert.clientCert.toString().replace(/\r/g, '').trim();
+    const keyPemStr = existingCert.privateKey.toString().replace(/\r/g, '').trim();
+    let userCert, privateKey;
+    try {
+        userCert = forge.pki.certificateFromPem(certPemStr);
+        privateKey = forge.pki.privateKeyFromPem(keyPemStr);
+    } catch (parseError) {
+        console.error("证书解析失败，可能是数据库存储格式错误:", parseError);
+        return failBack(res, { message: '证书数据损坏，请删除后重新申请' });
+    }
+    const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
+      privateKey,
+      [userCert],
+      '123456'
+    )
+    // 将 ASN.1 结构转换为 DER 编码的二进制数据
+    const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+    // 设置响应头并发送 P12 文件流
+    res.setHeader('Content-Type', 'application/x-pkcs12');
+    res.setHeader('Content-Disposition', `attachment; filename="${userId}.p12"`);
+    res.setHeader('Content-Length', p12Der.length);
+
+    // 发送二进制数据
+    successBack(res,Buffer.from(p12Der, 'binary'));
+  } catch (err) {
+    console.log('err:', err);
+    failBack(res,err);
+  }
+}
+
+
 
 
 // 导出所有控制器函数

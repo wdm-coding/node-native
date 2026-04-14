@@ -1,40 +1,39 @@
-// 用户证书模型
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database'); // 引入数据库实例
-const User = require('./user'); // 引入用户模型
-const UserCert = sequelize.define('userCert', {
+const User = require('./user'); // 引入用户模型实例
+
+const UserCert = sequelize.define('UserCert', {
     id: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        comment: '主键ID'
+        defaultValue: DataTypes.UUIDV4,
     },
     userId: {
         type: DataTypes.UUID,
         allowNull: false,
-        comment: '用户ID',
-        unique: true,
+        comment: '关联的用户ID',
         references: {
-            model: 'user',
+            model: 'User',
             key: 'id'
         }
     },
-    certPem: {
+    // 用户证书私钥
+    privateKey: {
         type: DataTypes.TEXT,
-        allowNull: false,
-        comment: '用户证书'
+        allowNull: false
     },
-    encryptedPrivateKey: {
+    // 用户证书
+    clientCert: {
         type: DataTypes.TEXT,
-        allowNull: false,
-        comment: '加密后的用户私钥'
+        allowNull: false
     }
 }, {
-    tableName: 'user_cert',
-    timestamps: true, // 使用时间戳字段，默认为 true
-    underscored: true, // 使用下划线命名字段
+    tableName: 'userCert',
+    timestamps: true, // 自动创建 createdAt 和 updatedAt 字段
+    underscored: true // 使用下划线命名 (created_at)
 });
+
 User.hasOne(UserCert, { foreignKey: 'userId', as: 'cert' });
 UserCert.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-// 导出模型
+
 module.exports = UserCert;
