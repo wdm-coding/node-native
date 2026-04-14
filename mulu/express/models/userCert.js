@@ -26,6 +26,11 @@ const UserCert = sequelize.define('UserCert', {
     clientCert: {
         type: DataTypes.TEXT,
         allowNull: false
+    },
+    // 用户证书p12格式buffer
+    p12: {
+        type: DataTypes.BLOB,
+        allowNull: false
     }
 }, {
     tableName: 'userCert',

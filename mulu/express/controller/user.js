@@ -4,8 +4,6 @@ const { Op } = require('sequelize'); // 引入 Sequelize 的 Op 操作符
 const { generateToken } = require('../utils/jwt'); // 引入 JWT 相关函数
 const {failBack,successBack} = require('../utils/backBody');
 const { parseP12FromFile  } = require('../utils/cert');
-const forge = require('node-forge');
-const { signUserCertificate } = require('../config/ssl');
 // 用户登录
 async function login(req, res) {
   try {
@@ -386,17 +384,6 @@ async function cancelCert(req, res) {
 }
 
 
-// 证书登录
-async function certLogin(req, res) {
-  try {    
-    // 解析证书信息
-    console.log('req.certUserId:', req.certUserId);
-    successBack(res);
-  } catch (err) {
-    failBack(res,err);
-  }
-}
-
 // 证书上传后解析证书信息
 async function parseCert(req, res) {
   try {
@@ -406,10 +393,8 @@ async function parseCert(req, res) {
         message: '请上传文件' 
       });
     }
-    console.log('req.file:', req.file);
     // 直接调用解析 P12 文件的函数
     const certContent = parseP12FromFile(req.file.path);
-    console.log('certContent:', certContent);
     // 解析证书信息
     successBack(res,certContent);
   } catch (err) {
@@ -418,7 +403,7 @@ async function parseCert(req, res) {
 }
 
 // 用户申请证书
-const { createClientCert } = require('../config/ssl.js');
+const CertificateManager = require('../config/ssl');
 async function applyCert(req, res) {
   try {
     const { userId } = req.params;
@@ -435,16 +420,19 @@ async function applyCert(req, res) {
       return failBack(res,{message:'用户已申请证书'});
     }
     
-    // 3. 生成证书
-    const certData  = createClientCert(userId);
- // 【关键修复】存入前再次清洗，确保没有 \r 或多余空格
-    const cleanKey = certData.clientKey.replace(/\r/g, '').trim();
-    const cleanCert = certData.clientCert.replace(/\r/g, '').trim();
+    // 3. 创建证书管理器实例
+    const certManager = new CertificateManager();
+    // 4. 生成证书
+    const certResult = certManager.generateClientCert({
+      userId,
+      username: user.username
+    });
     // 4. 保存证书和加密后的私钥到数据库
     const newCertRecord = await UserCert.create({
       userId: userId, // 用户ID
-      privateKey: cleanKey,    // 保存私钥
-      clientCert: cleanCert,   // 保存用户证书
+      privateKey: certResult.privateKey,    // 保存私钥
+      clientCert: certResult.certificate,   // 保存用户证书
+      p12: certResult.p12,   // 保存用户证书p12格式buffer
     });
     successBack(res,newCertRecord);
   } catch (err) {
@@ -457,50 +445,40 @@ async function applyCert(req, res) {
 async function downloadCert(req, res) {
   try {
     const { userId } = req.params;
-
     // 1. 验证用户是否存在
     const user = await User.findByPk(userId);
     if (!user) {
       return failBack(res,{message:'用户不存在'});
     }
-
-    // 查询证书是否存在
+    // 2. 验证用户是否已申请证书
     const existingCert = await UserCert.findOne({ where: { userId } });
     if (!existingCert) {
       return failBack(res,{message:'用户未申请证书'});
     }
-    // 解析证书和私钥
-    // 1. 确保从数据库取出的字符串是干净的
-    const certPemStr = existingCert.clientCert.toString().replace(/\r/g, '').trim();
-    const keyPemStr = existingCert.privateKey.toString().replace(/\r/g, '').trim();
-    let userCert, privateKey;
-    try {
-        userCert = forge.pki.certificateFromPem(certPemStr);
-        privateKey = forge.pki.privateKeyFromPem(keyPemStr);
-    } catch (parseError) {
-        console.error("证书解析失败，可能是数据库存储格式错误:", parseError);
-        return failBack(res, { message: '证书数据损坏，请删除后重新申请' });
-    }
-    const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
-      privateKey,
-      [userCert],
-      '123456'
-    )
-    // 将 ASN.1 结构转换为 DER 编码的二进制数据
-    const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
-    // 设置响应头并发送 P12 文件流
+    // 3. 下载p12证书
+    // 设置响应头
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(user.username)}_certificate.p12"`);
     res.setHeader('Content-Type', 'application/x-pkcs12');
-    res.setHeader('Content-Disposition', `attachment; filename="${userId}.p12"`);
-    res.setHeader('Content-Length', p12Der.length);
-
-    // 发送二进制数据
-    successBack(res,Buffer.from(p12Der, 'binary'));
+    res.setHeader('Content-Length', existingCert.p12.length);
+    // 发送证书数据
+    res.end(existingCert.p12);
   } catch (err) {
     console.log('err:', err);
     failBack(res,err);
   }
 }
 
+
+// 证书登录
+async function certLogin(req, res) {
+  try {
+    // 解析证书信息
+    console.log('req.user:', req.user);
+    successBack(res);
+  } catch (err) {
+    failBack(res,err);
+  }
+}
 
 
 
