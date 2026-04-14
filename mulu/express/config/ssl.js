@@ -87,9 +87,9 @@ class CertificateManager {
 		])
 		cert.setIssuer(cert.subject.attributes) // 自签名
 		// 设置有效期
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date();
-        cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 365); // 一年有效期
+		cert.validity.notBefore = new Date()
+		cert.validity.notAfter = new Date()
+		cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 365) // 一年有效期
 		// 设置扩展
 		cert.setExtensions([
 			{
@@ -155,9 +155,9 @@ class CertificateManager {
 		// 设置颁发者（CA）
 		cert.setIssuer(caCertObj.subject.attributes)
 		// 设置有效期
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date();
-        cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 365); // 一年有效期
+		cert.validity.notBefore = new Date()
+		cert.validity.notAfter = new Date()
+		cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 365) // 一年有效期
 		// 设置扩展
 		cert.setExtensions([
 			{
@@ -188,7 +188,7 @@ class CertificateManager {
 			},
 		])
 		// 签名证书
-		cert.sign(caPrivateKeyObj, this.md.sha256.create()) 
+		cert.sign(caPrivateKeyObj, this.md.sha256.create())
 		return {
 			privateKey: this.pki.privateKeyToPem(keys.privateKey), // 服务器私钥转换为PEM格式
 			certificate: this.pki.certificateToPem(cert), // 服务器证书转换为PEM格式
@@ -233,9 +233,9 @@ class CertificateManager {
 		// 设置颁发者（CA）
 		cert.setIssuer(caCertObj.subject.attributes) // 设置颁发者为CA证书主题
 		// 设置有效期
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date();
-        cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 365); // 一年有效期
+		cert.validity.notBefore = new Date()
+		cert.validity.notAfter = new Date()
+		cert.validity.notAfter.setDate(cert.validity.notBefore.getDate() + 365) // 一年有效期
 		// 设置扩展
 		cert.setExtensions([
 			{
@@ -258,32 +258,19 @@ class CertificateManager {
 		const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
 			keys.privateKey,
 			[cert], // 证书链
-			'123456', // 密码 - 在实际应用中应该使用动态密码
+			"123456", // 密码 - 在实际应用中应该使用动态密码
 			{
 				generateLocalKeyId: true, // 生成本地密钥ID
 				friendlyName: clientInfo.userId, // 证书别名
 			},
 		)
-        // 转换为DER编码
+		// 转换为DER编码
 		const p12Der = forge.asn1.toDer(p12Asn1).getBytes()
 		return {
-			privateKey: this.pki.privateKeyToPem(keys.privateKey),// 客户端私钥转换为PEM格式
+			privateKey: this.pki.privateKeyToPem(keys.privateKey), // 客户端私钥转换为PEM格式
 			certificate: this.pki.certificateToPem(cert), // 客户端证书转换为PEM格式
 			p12: Buffer.from(p12Der, "binary"), // 转换为Buffer
-			username: clientInfo.username,// 客户端用户名
-		}
-	}
-
-	// 验证证书
-	verifyCertificate(certificate, caCertificate = this.caCert) {
-		try {
-			const cert = this.pki.certificateFromPem(certificate) // 解析客户端证书
-			const caCert = this.pki.certificateFromPem(caCertificate) // 解析CA证书
-			// 验证证书是否由CA签发
-			return this.pki.verifyCertificateChain(caCert, [cert])
-		} catch (error) {
-			console.error("证书验证失败:", error)
-			return false
+			username: clientInfo.username, // 客户端用户名
 		}
 	}
 
@@ -292,53 +279,9 @@ class CertificateManager {
 		return {
 			key: this.serverKey,
 			cert: this.serverCert,
-			ca: this.caCert,
+			ca: [this.caCert],
 			requestCert: true, // 请求客户端证书
 			rejectUnauthorized: false, // 我们将在应用层处理证书验证
-		}
-	}
-
-	// 提取客户端证书信息
-	extractClientCertInfo(req) {
-		if (req.client && req.client.cert) {
-			const cert = req.client.cert
-			return {
-				subject: cert.subject,
-				issuer: cert.issuer,
-				valid_from: cert.valid_from,
-				valid_to: cert.valid_to,
-				fingerprint: cert.fingerprint,
-				raw: cert.raw,
-			}
-		}
-		return null
-	}
-
-	// 验证客户端证书
-	async validateClientCert(req, db) {
-		const clientCert = this.extractClientCertInfo(req)
-
-		if (!clientCert) {
-			throw new Error("客户端证书缺失")
-		}
-
-		// 从证书主题中提取用户ID
-		const userIdMatch = clientCert.subject.CN.match(/([^@]+)/)
-		if (!userIdMatch) {
-			throw new Error("证书信息不完整：未找到有效的用户ID")
-		}
-		const userId = userIdMatch[0]
-
-		// 验证证书是否在数据库中存在且有效
-		const storedCert = await db.findCertificateByUserId(userId)
-		if (!storedCert) {
-			throw new Error("证书未授权：该证书未在系统中注册或已过期")
-		}
-
-		return {
-			userId: userId, 
-			storedCertId: storedCert.id,
-			certInfo: clientCert,
 		}
 	}
 
@@ -355,6 +298,25 @@ class CertificateManager {
 	// 获取服务器密钥
 	getServerKey() {
 		return this.serverKey
+	}
+	// 添加提取用户ID的方法
+	extractUserIdFromCert(clientCert) {
+		// 从证书主题中提取用户ID (CN字段)
+		if (clientCert.subject && clientCert.subject.CN) {
+			return clientCert.subject.CN
+		} else if (clientCert.subject && typeof clientCert.subject.getField === "function") {
+			const cnField = clientCert.subject.getField("CN")
+			if (cnField) {
+				return cnField.value
+			}
+		} else if (typeof clientCert.subject === "string") {
+			// 从字符串形式的主题中提取CN
+			const match = clientCert.subject.match(/CN=([^,]+)/)
+			if (match) {
+				return match[1]
+			}
+		}
+		return null
 	}
 }
 
