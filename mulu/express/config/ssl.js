@@ -254,6 +254,8 @@ class CertificateManager {
 		])
 		// 签名证书
 		cert.sign(caPrivateKeyObj, this.md.sha256.create())
+		// 保存用户crt证书和用户私钥到文件
+		this.saveClientCert(clientInfo, keys, cert)
 		// 生成PKCS#12 (P12) 格式证书
 		const p12Asn1 = forge.pkcs12.toPkcs12Asn1(
 			keys.privateKey,
@@ -271,6 +273,31 @@ class CertificateManager {
 			certificate: this.pki.certificateToPem(cert), // 客户端证书转换为PEM格式
 			p12: Buffer.from(p12Der, "binary"), // 转换为Buffer
 			username: clientInfo.username, // 客户端用户名
+		}
+	}
+
+	// 保存客户端用户的crt证书与客户端私钥文件到userCert目录
+	saveClientCert(clientInfo, keys, cert) {
+		try {
+			// 创建用户特定的目录
+			const userDir = path.join(__dirname, 'userCert', clientInfo.userId)
+			if (!fs.existsSync(userDir)) {
+				fs.mkdirSync(userDir, { recursive: true })
+			}
+			// 生成文件名
+			const timestamp = Date.now()
+			const certFileName = `${clientInfo.userId}_${timestamp}.crt`
+			const keyFileName = `${clientInfo.userId}_${timestamp}.key`
+			// 保存证书文件
+			const certPath = path.join(userDir, certFileName)
+			const keyPath = path.join(userDir, keyFileName)
+			fs.writeFileSync(certPath, this.pki.certificateToPem(cert))
+			fs.writeFileSync(keyPath, this.pki.privateKeyToPem(keys.privateKey))
+			console.log(`客户端证书已保存: ${certPath}`)
+			console.log(`客户端私钥已保存: ${keyPath}`)
+		} catch (error) {
+			console.error(`保存客户端证书失败:`, error.message)
+			throw error
 		}
 	}
 
