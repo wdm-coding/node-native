@@ -1,4 +1,3 @@
-console.log('nest')
-import { Controller } from './Controller'
-
-const controller = new Controller()
+// import './1'
+// import './2'
+import './3'
