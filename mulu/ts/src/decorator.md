@@ -141,3 +141,10 @@ class CustomerService {
 const customerService = new CustomerService()
 customerService.show()
 ```
+## 元数据的第三方库 `npm i reflect-metadata -S`
+
+## 装饰器执行顺序
+1. 属性装饰器
+2. 方法参数装饰器
+3. 方法装饰器
+4. 类装饰器

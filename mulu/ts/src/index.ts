@@ -16,4 +16,5 @@ console.log('启动了')
 // import './zsq/3'
 // import './zsq/4'
 // import './zsq/5'
-import './zsq/6'
+// import './zsq/6'
+import './nest'
