@@ -18,4 +18,5 @@ console.log('启动了')
 // import './zsq/5'
 // import './zsq/6'
 // import './nest'
-import './IOC-DI'
+// import './IOC-DI'
+import './reflect-metadata'
