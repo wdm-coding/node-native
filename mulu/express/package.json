@@ -1,0 +1,27 @@
+{
+  "name": "express",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon app.js --watch",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "ca": "node utils/generateCaKeys.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "ioredis": "^5.10.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.0",
+    "mysql2": "^3.18.0",
+    "node-forge": "^1.4.0",
+    "nodemon": "^3.1.14",
+    "sequelize": "^6.37.7"
+  }
+}

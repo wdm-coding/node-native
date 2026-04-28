@@ -1,0 +1,22 @@
+{
+  "name": "native",
+  "version": "1.0.0",
+  "description": "自定义脚手架",
+  "main": "index.js",
+  "bin": {
+    "xz-cli": "bin/cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^14.0.2",
+    "download-git-repo": "^3.0.2",
+    "inquirer": "^8.2.7",
+    "ora": "^5.4.1"
+  }
+}

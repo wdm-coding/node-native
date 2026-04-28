@@ -1,0 +1,1 @@
+module.exports.secret = 'bcc4afa7-b69f-49e1-89e8-6c2e65c25d6e'

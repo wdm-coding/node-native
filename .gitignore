@@ -1,0 +1,7 @@
+# dependencies
+/node_modules
+/node_modules.zip
+# 忽略mulu文件下的node_modules
+/mulu/*/node_modules
+# file
+/mulu/*/package-lock.json
